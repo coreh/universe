@@ -13,6 +13,7 @@ pub mod traits {
 }
 
 #[repr(C)]
+#[derive(Clone)]
 pub struct Vertex {
     pub position: [GLfloat; 3],
     pub normal: [GLfloat; 3],
@@ -46,36 +47,56 @@ impl Geometry {
         let mut vbo: GLuint = gl::NONE;
         let num_vertices: GLsizei = data.len() as GLsizei;
 
-        unsafe {
-            // TODO: pool vao's across Geometrys with the same Vertex type
-            gl::CreateVertexArrays(1, &mut vao);
-            gl::CreateBuffers(1, &mut vbo);
+        if num_vertices > 0 {
 
-            gl::NamedBufferData(vbo,
-                           (data.len() * std::mem::size_of::<V>()) as GLsizeiptr,
-                           std::mem::transmute(&data[0]),
-                           gl::STATIC_DRAW);
+            unsafe {
+                // TODO: pool vao's across Geometrys with the same Vertex type
+                gl::CreateVertexArrays(1, &mut vao);
+                gl::CreateBuffers(1, &mut vbo);
 
-            gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, std::mem::size_of::<V>() as GLsizei);
+                gl::NamedBufferData(vbo,
+                                    (data.len() * std::mem::size_of::<V>()) as GLsizeiptr,
+                                    std::mem::transmute(&data[0]),
+                                    gl::STATIC_DRAW);
 
-            if let Some(position_offset) = V::position_offset() {
-                gl::VertexArrayAttribBinding(vao, Attribute::Position as GLuint, 0);
-                gl::EnableVertexArrayAttrib(vao, Attribute::Position as GLuint);
-                gl::VertexArrayAttribFormat(vao, Attribute::Position as GLuint, 3, gl::FLOAT, gl::FALSE, position_offset as GLuint);
-            }
+                gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, std::mem::size_of::<V>() as GLsizei);
 
-            if let Some(normal_offset) = V::normal_offset() {
-                gl::EnableVertexArrayAttrib(vao, Attribute::Normal as GLuint);
-                gl::VertexArrayAttribFormat(vao, Attribute::Normal as GLuint, 3, gl::FLOAT, gl::FALSE, normal_offset as GLuint);
-                gl::VertexArrayAttribBinding(vao, Attribute::Normal as GLuint, 0);
-            }
+                if let Some(position_offset) = V::position_offset() {
+                    gl::VertexArrayAttribBinding(vao, Attribute::Position as GLuint, 0);
+                    gl::EnableVertexArrayAttrib(vao, Attribute::Position as GLuint);
+                    gl::VertexArrayAttribFormat(vao,
+                                                Attribute::Position as GLuint,
+                                                3,
+                                                gl::FLOAT,
+                                                gl::FALSE,
+                                                position_offset as GLuint);
+                }
 
-            if let Some(uv_offset) = V::uv_offset() {
-                gl::EnableVertexArrayAttrib(vao, Attribute::UV as GLuint);
-                gl::VertexArrayAttribFormat(vao, Attribute::UV as GLuint, 2, gl::FLOAT, gl::FALSE, uv_offset as GLuint);
-                gl::VertexArrayAttribBinding(vao, Attribute::UV as GLuint, 0);
+                if let Some(normal_offset) = V::normal_offset() {
+                    gl::EnableVertexArrayAttrib(vao, Attribute::Normal as GLuint);
+                    gl::VertexArrayAttribFormat(vao,
+                                                Attribute::Normal as GLuint,
+                                                3,
+                                                gl::FLOAT,
+                                                gl::FALSE,
+                                                normal_offset as GLuint);
+                    gl::VertexArrayAttribBinding(vao, Attribute::Normal as GLuint, 0);
+                }
+
+                if let Some(uv_offset) = V::uv_offset() {
+                    gl::EnableVertexArrayAttrib(vao, Attribute::UV as GLuint);
+                    gl::VertexArrayAttribFormat(vao,
+                                                Attribute::UV as GLuint,
+                                                2,
+                                                gl::FLOAT,
+                                                gl::FALSE,
+                                                uv_offset as GLuint);
+                    gl::VertexArrayAttribBinding(vao, Attribute::UV as GLuint, 0);
+                }
             }
         }
+
+        println!("{}", num_vertices);
 
         Geometry {
             vao,
@@ -85,6 +106,10 @@ impl Geometry {
     }
 
     pub fn draw(&self) {
+        if self.num_vertices == 0 {
+            return;
+        }
+
         unsafe {
             gl::BindVertexArray(self.vao);
             gl::DrawArrays(gl::TRIANGLES, 0, self.num_vertices);

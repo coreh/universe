@@ -1,3 +1,4 @@
+extern crate cgmath;
 extern crate sdl2;
 extern crate gl;
 
@@ -9,9 +10,11 @@ use sdl2::event::Event;
 mod error;
 mod shader;
 mod geometry;
+mod field;
 
 use shader::{ Shader };
 use geometry::{ Geometry, Vertex };
+use field::{ Field, isosurface };
 
 static VERTEX_DATA: [Vertex; 3] = [
     Vertex {
@@ -65,15 +68,17 @@ fn main() {
     let mut events = sdl_context.event_pump().unwrap();
 
     let shader = Shader::load("base").unwrap();
-    let geometry = Geometry::from(&VERTEX_DATA);
+    //let geometry = Geometry::from(&VERTEX_DATA);
+    let mut t = 0.0;
 
     'main: loop {
 
         unsafe {
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
-
         }
+        let geometry = isosurface(&move |x: f64, y: f64, z: f64| f64::sin(x+t)+f64::sin(y)+f64::sin(z));
+        t += 0.1;
 
         shader.select();
         geometry.draw();
