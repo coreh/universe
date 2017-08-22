@@ -20,12 +20,15 @@ pub struct Vertex {
 }
 
 impl traits::Vertex for Vertex {
+    #[inline]
     fn position_offset() -> Option<usize> {
         Some(0)
     }
+    #[inline]
     fn normal_offset() -> Option<usize> {
         Some(std::mem::align_of::<GLfloat>() * 3)
     }
+    #[inline]
     fn uv_offset() -> Option<usize> {
         Some(std::mem::align_of::<GLfloat>() * 6)
     }
@@ -45,51 +48,33 @@ impl Geometry {
 
         unsafe {
             // TODO: pool vao's across Geometrys with the same Vertex type
-            gl::GenVertexArrays(1, &mut vao);
-            gl::BindVertexArray(vao);
+            gl::CreateVertexArrays(1, &mut vao);
+            gl::CreateBuffers(1, &mut vbo);
 
-            gl::GenBuffers(1, &mut vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-
-            gl::BufferData(gl::ARRAY_BUFFER,
+            gl::NamedBufferData(vbo,
                            (data.len() * std::mem::size_of::<V>()) as GLsizeiptr,
                            std::mem::transmute(&data[0]),
                            gl::STATIC_DRAW);
 
+            gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, std::mem::size_of::<V>() as GLsizei);
 
             if let Some(position_offset) = V::position_offset() {
-                gl::EnableVertexAttribArray(Attribute::Position as GLuint);
-                gl::VertexAttribPointer(Attribute::Position as GLuint,
-                                        3,
-                                        gl::FLOAT,
-                                        gl::FALSE,
-                                        std::mem::size_of::<V>() as GLint,
-                                        position_offset as *const GLvoid);
+                gl::VertexArrayAttribBinding(vao, Attribute::Position as GLuint, 0);
+                gl::EnableVertexArrayAttrib(vao, Attribute::Position as GLuint);
+                gl::VertexArrayAttribFormat(vao, Attribute::Position as GLuint, 3, gl::FLOAT, gl::FALSE, position_offset as GLuint);
             }
 
             if let Some(normal_offset) = V::normal_offset() {
-                gl::EnableVertexAttribArray(Attribute::Normal as GLuint);
-                gl::VertexAttribPointer(Attribute::Normal as GLuint,
-                                        3,
-                                        gl::FLOAT,
-                                        gl::FALSE,
-                                        std::mem::size_of::<V>() as GLint,
-                                        normal_offset as *const GLvoid);
+                gl::EnableVertexArrayAttrib(vao, Attribute::Normal as GLuint);
+                gl::VertexArrayAttribFormat(vao, Attribute::Normal as GLuint, 3, gl::FLOAT, gl::FALSE, normal_offset as GLuint);
+                gl::VertexArrayAttribBinding(vao, Attribute::Normal as GLuint, 0);
             }
 
             if let Some(uv_offset) = V::uv_offset() {
-                gl::EnableVertexAttribArray(Attribute::UV as GLuint);
-                gl::VertexAttribPointer(Attribute::UV as GLuint,
-                                        2,
-                                        gl::FLOAT,
-                                        gl::FALSE,
-                                        std::mem::size_of::<V>() as GLint,
-                                        uv_offset as *const GLvoid);
+                gl::EnableVertexArrayAttrib(vao, Attribute::UV as GLuint);
+                gl::VertexArrayAttribFormat(vao, Attribute::UV as GLuint, 2, gl::FLOAT, gl::FALSE, uv_offset as GLuint);
+                gl::VertexArrayAttribBinding(vao, Attribute::UV as GLuint, 0);
             }
-
-            gl::BindVertexArray(gl::NONE);
-            gl::BindBuffer(gl::ARRAY_BUFFER, gl::NONE);
-
         }
 
         Geometry {
@@ -101,9 +86,8 @@ impl Geometry {
 
     pub fn draw(&self) {
         unsafe {
-            gl::BindVertexArray(self.vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+            gl::BindVertexArray(self.vao);
+            gl::DrawArrays(gl::TRIANGLES, 0, self.num_vertices);
         }
     }
 }

@@ -109,6 +109,12 @@ impl Shader {
             Ok(program)
         }
     }
+
+    pub fn select(&self) {
+        unsafe {
+            gl::UseProgram(self.program);
+        }
+    }
 }
 
 impl Drop for Shader {

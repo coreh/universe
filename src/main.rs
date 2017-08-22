@@ -61,33 +61,28 @@ fn main() {
     gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
     canvas.window().gl_set_context_to_current().unwrap();
-    //canvas.set_logical_size(320, 240).unwrap();
 
     let mut events = sdl_context.event_pump().unwrap();
 
     let shader = Shader::load("base").unwrap();
     let geometry = Geometry::from(&VERTEX_DATA);
 
-    unsafe {
-        //gl::Enable(gl::FRAMEBUFFER_SRGB);
-        gl::UseProgram(shader.program);
-    }
-
-    loop {
+    'main: loop {
 
         unsafe {
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
-            geometry.draw();
         }
 
+        shader.select();
+        geometry.draw();
         canvas.present();
 
         for event in events.poll_iter() {
             match event {
                 Event::Quit { .. } => {
-                    break;
+                    break 'main;
                 }
                 _ => {}
             }
