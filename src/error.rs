@@ -30,5 +30,11 @@ quick_error!{
             cause(err)
             description(err.description())
         }
+
+        Format(err: std::fmt::Error) {
+            from()
+            cause(err)
+            description(err.description())
+        }
     }
 }

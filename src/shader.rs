@@ -9,8 +9,14 @@ use gl::types::*;
 use error::Error;
 
 pub enum Attribute {
-    position = 0,
-    normal = 1,
+    Position = 0,
+    Normal = 1,
+    UV = 2,
+}
+
+pub enum Uniform {
+    ModelView = 0,
+    Projection = 1,
 }
 
 pub struct Shader {
@@ -21,8 +27,8 @@ impl Shader {
     pub fn load(path: &str) -> Result<Shader, Error> {
         let mut vert_path = String::new();
         let mut frag_path = String::new();
-        write!(&mut vert_path, "{}.vert", path);
-        write!(&mut frag_path, "{}.frag", path);
+        write!(&mut vert_path, "{}.vert", path)?;
+        write!(&mut frag_path, "{}.frag", path)?;
         let vert = Self::compile(vert_path.as_str(), gl::VERTEX_SHADER)?;
         let frag = Self::compile(frag_path.as_str(), gl::FRAGMENT_SHADER)?;
         let program = Self::link(vert, frag)?;
@@ -32,8 +38,11 @@ impl Shader {
     fn compile(path: &str, ty: GLenum) -> Result<GLuint, Error> {
 
         let mut src = String::from("#version 330\n");
-        writeln!(&mut src, "#define ATTRIB_POSITION {}", Attribute::position as GLuint);
-        writeln!(&mut src, "#define ATTRIB_NORMAL {}", Attribute::normal as GLuint);
+        writeln!(&mut src, "#define ATTRIB_POSITION {}", Attribute::Position as GLuint)?;
+        writeln!(&mut src, "#define ATTRIB_NORMAL {}", Attribute::Normal as GLuint)?;
+        writeln!(&mut src, "#define ATTRIB_UV {}", Attribute::UV as GLuint)?;
+        writeln!(&mut src, "#define UNIFORM_MODEL_VIEW {}", Uniform::ModelView as GLuint)?;
+        writeln!(&mut src, "#define UNIFORM_PROJECTION {}", Uniform::Projection as GLuint)?;
 
         let mut file = File::open(path)?;
         file.read_to_string(&mut src)?;
@@ -41,6 +50,7 @@ impl Shader {
         let shader;
         unsafe {
             shader = gl::CreateShader(ty);
+
             // Attempt to compile the shader
             let c_str = std::ffi::CString::new(src.as_bytes())?;
             gl::ShaderSource(shader, 1, &c_str.as_ptr(), std::ptr::null());
@@ -73,6 +83,7 @@ impl Shader {
             gl::AttachShader(program, vs);
             gl::AttachShader(program, fs);
             gl::LinkProgram(program);
+
             // Get the link status
             let mut status = gl::FALSE as GLint;
             gl::GetProgramiv(program, gl::LINK_STATUS, &mut status);
