@@ -96,8 +96,6 @@ impl Geometry {
             }
         }
 
-        println!("{}", num_vertices);
-
         Geometry {
             vao,
             vbo,

@@ -37,7 +37,7 @@ impl Shader {
 
     fn compile(path: &str, ty: GLenum) -> Result<GLuint, Error> {
 
-        let mut src = String::from("#version 330\n");
+        let mut src = String::from("#version 430\n");
         writeln!(&mut src, "#define ATTRIB_POSITION {}", Attribute::Position as GLuint)?;
         writeln!(&mut src, "#define ATTRIB_NORMAL {}", Attribute::Normal as GLuint)?;
         writeln!(&mut src, "#define ATTRIB_UV {}", Attribute::UV as GLuint)?;
