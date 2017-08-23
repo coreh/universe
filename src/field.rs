@@ -104,39 +104,39 @@ fn back(field: &Field, x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z, 0.0, 0.0, -1.0),
      vertex(field, x + 1.0, y + 1.0, z, 0.0, 0.0, -1.0),
      vertex(field, x + 1.0, y + 0.0, z, 0.0, 0.0, -1.0),
+     vertex(field, x + 1.0, y + 1.0, z, 0.0, 0.0, -1.0),
      vertex(field, x + 0.0, y + 0.0, z, 0.0, 0.0, -1.0),
-     vertex(field, x + 0.0, y + 1.0, z, 0.0, 0.0, -1.0),
-     vertex(field, x + 1.0, y + 1.0, z, 0.0, 0.0, -1.0)]
+     vertex(field, x + 0.0, y + 1.0, z, 0.0, 0.0, -1.0)]
 }
 
 #[inline]
 fn right(field: &Field, x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 1.0, y + 0.0, z + 0.0, 1.0, 0.0, 0.0),
+     vertex(field, x + 1.0, y + 1.0, z + 1.0, 1.0, 0.0, 0.0),
      vertex(field, x + 1.0, y + 0.0, z + 1.0, 1.0, 0.0, 0.0),
-     vertex(field, x + 1.0, y + 1.0, z + 1.0, 1.0, 0.0, 0.0),
      vertex(field, x + 1.0, y + 0.0, z + 0.0, 1.0, 0.0, 0.0),
-     vertex(field, x + 1.0, y + 1.0, z + 1.0, 1.0, 0.0, 0.0),
-     vertex(field, x + 1.0, y + 1.0, z + 0.0, 1.0, 0.0, 0.0)]
+     vertex(field, x + 1.0, y + 1.0, z + 0.0, 1.0, 0.0, 0.0),
+     vertex(field, x + 1.0, y + 1.0, z + 1.0, 1.0, 0.0, 0.0)]
 }
 
 #[inline]
 fn left(field: &Field, x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z + 0.0, -1.0, 0.0, 0.0),
-     vertex(field, x + 0.0, y + 1.0, z + 1.0, -1.0, 0.0, 0.0),
      vertex(field, x + 0.0, y + 0.0, z + 1.0, -1.0, 0.0, 0.0),
+     vertex(field, x + 0.0, y + 1.0, z + 1.0, -1.0, 0.0, 0.0),
      vertex(field, x + 0.0, y + 0.0, z + 0.0, -1.0, 0.0, 0.0),
-     vertex(field, x + 0.0, y + 1.0, z + 0.0, -1.0, 0.0, 0.0),
-     vertex(field, x + 0.0, y + 1.0, z + 1.0, -1.0, 0.0, 0.0)]
+     vertex(field, x + 0.0, y + 1.0, z + 1.0, -1.0, 0.0, 0.0),
+     vertex(field, x + 0.0, y + 1.0, z + 0.0, -1.0, 0.0, 0.0)]
 }
 
 #[inline]
 fn top(field: &Field, x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 1.0, z + 0.0, 0.0, 1.0, 0.0),
+     vertex(field, x + 1.0, y + 1.0, z + 1.0, 0.0, 1.0, 0.0),
      vertex(field, x + 1.0, y + 1.0, z + 0.0, 0.0, 1.0, 0.0),
-     vertex(field, x + 1.0, y + 1.0, z + 1.0, 0.0, 1.0, 0.0),
      vertex(field, x + 0.0, y + 1.0, z + 0.0, 0.0, 1.0, 0.0),
-     vertex(field, x + 1.0, y + 1.0, z + 1.0, 0.0, 1.0, 0.0),
-     vertex(field, x + 0.0, y + 1.0, z + 1.0, 0.0, 1.0, 0.0)]
+     vertex(field, x + 0.0, y + 1.0, z + 1.0, 0.0, 1.0, 0.0),
+     vertex(field, x + 1.0, y + 1.0, z + 1.0, 0.0, 1.0, 0.0)]
 }
 
 #[inline]
@@ -144,7 +144,7 @@ fn bottom(field: &Field, x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z + 0.0, 0.0, -1.0, 0.0),
      vertex(field, x + 1.0, y + 0.0, z + 1.0, 0.0, -1.0, 0.0),
      vertex(field, x + 0.0, y + 0.0, z + 1.0, 0.0, -1.0, 0.0),
+     vertex(field, x + 1.0, y + 0.0, z + 1.0, 0.0, -1.0, 0.0),
      vertex(field, x + 0.0, y + 0.0, z + 0.0, 0.0, -1.0, 0.0),
-     vertex(field, x + 1.0, y + 0.0, z + 0.0, 0.0, -1.0, 0.0),
-     vertex(field, x + 1.0, y + 0.0, z + 1.0, 0.0, -1.0, 0.0)]
+     vertex(field, x + 1.0, y + 0.0, z + 0.0, 0.0, -1.0, 0.0)]
 }
