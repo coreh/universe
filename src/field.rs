@@ -45,15 +45,27 @@ fn test(field: &Field, x: f64, y: f64, z: f64) -> bool {
 fn vertex(field: &Field, x: f64, y: f64, z: f64, a: f32, b: f32, c: f32) -> Vertex {
     let x_a = field(x-1.0, y, z).abs();
     let x_b = field(x+1.0, y, z).abs();
-    let x = (x + 1.0) * x_a / (x_a + x_b) + (x - 1.0) * x_b / (x_a + x_b);
+    let x = if x_a + x_b > 0.0 {
+        (x + 1.0) * x_a / (x_a + x_b) + (x - 1.0) * x_b / (x_a + x_b)
+    } else {
+        x
+    };
 
     let y_a = field(x, y-1.0, z).abs();
     let y_b = field(x, y+1.0, z).abs();
-    let y = (y + 1.0) * y_a / (y_a + y_b) + (y - 1.0) * y_b / (y_a + y_b);
+    let y = if y_a + y_b > 0.0 {
+        (y + 1.0) * y_a / (y_a + y_b) + (y - 1.0) * y_b / (y_a + y_b)
+    } else {
+        y
+    };
 
     let z_a = field(x, y, z-1.0).abs();
     let z_b = field(x, y, z+1.0).abs();
-    let z = (z + 1.0) * z_a / (z_a + z_b) + (z - 1.0) * z_b / (z_a + z_b);
+    let z = if z_a + z_b > 0.0 {
+        (z + 1.0) * z_a / (z_a + z_b) + (z - 1.0) * z_b / (z_a + z_b)
+    } else {
+        z
+    };
 
     let n_x = field(x+0.5, y, z) - field(x-0.5, y, z);
     let n_y = field(x, y+0.5, z) - field(x, y-0.5, z);
@@ -66,6 +78,16 @@ fn vertex(field: &Field, x: f64, y: f64, z: f64, a: f32, b: f32, c: f32) -> Vert
         uv: [0.0, 0.0],
     }
 }
+
+#[inline]
+fn vertex_blocky(field: &Field, x: f64, y: f64, z: f64, a: f32, b: f32, c: f32) -> Vertex {
+    Vertex {
+        position: [x as f32, y as f32, z as f32],
+        normal: [a, b, c],
+        uv: [0.0, 0.0],
+    }
+}
+
 
 #[inline]
 fn front(field: &Field, x: f64, y: f64, z: f64) -> [Vertex; 6] {
