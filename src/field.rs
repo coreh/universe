@@ -5,7 +5,7 @@ pub trait Isosurface {
 }
 
 const COUNT: i32 = 32;
-const STEP: f64 = 1.0;
+const STEP: f64 = 1.0 / 32.0;
 const HALF: f64 = STEP / 2.0;
 const ____: f64 = 0.0;
 
