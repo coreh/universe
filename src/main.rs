@@ -10,11 +10,11 @@ use sdl2::event::Event;
 mod error;
 mod shader;
 mod geometry;
-mod field;
+mod isosurface;
 
 use shader::{Shader, Uniform};
 use geometry::Geometry;
-use field::Isosurface;
+use isosurface::Isosurface;
 use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4, Deg};
 use gl::types::*;
