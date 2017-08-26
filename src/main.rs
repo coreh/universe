@@ -19,6 +19,7 @@ use isosurface::Isosurface;
 use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4, Deg};
 use gl::types::*;
+use octree::{Octree};
 
 fn find_sdl_gl_driver() -> Option<u32> {
     for (index, item) in sdl2::render::drivers().enumerate() {
@@ -35,7 +36,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("isosurface", 512, 512)
+        .window("isosurface", 1024, 1024)
         //.fullscreen_desktop()
         .build()
         .unwrap();
@@ -58,36 +59,60 @@ fn main() {
 
     shader.select();
 
+    let scalar_field = |x: f64, y: f64, z: f64| x.powi(2) + y.powi(2) + z.powi(2) - 0.25;
+    let mut octree = Octree::new(&scalar_field);
+
+    let mut target_x: f64 = 0.0;
+    let mut target_y: f64 = 0.0;
+    let mut target_z: f64 = 0.0;
+
     'main: loop {
-        let geometry = {
+        /*let geometry = {
             let field =
-                |x: f64, y: f64, z: f64| x.powi(2) + y.powi(2) + z.powi(2) - 1.0;
+                |x: f64, y: f64, z: f64| x.powi(2) + y.powi(2) + z.powi(2) - 0.25;
             let transform = |x: f64, y: f64, z: f64| field(x, y, z);
             Geometry::isosurface(&transform)
-        };
+        };*/
+
+        target_x = (f64::from(t) / 57.2958).cos() * 0.5;
+        target_z = (f64::from(t) / 57.2958).sin() * 0.5;
+
+        octree.walk(&|node, info, level, x, y, z| {
+            //println!("{{ level: {}, x: {}, y: {}, z: {} }}", level, x, y, z);
+            let inc = 0.5 / f64::from(1 << level);
+            if level < 4 &&
+                target_x + 0.1 >= x - inc && target_x - 0.1 <= x + inc &&
+                target_y + 0.1 >= y - inc && target_y - 0.1 <= y + inc &&
+                target_z + 0.1 >= z - inc && target_z - 0.1 <= z + inc {
+                node.create_children(info, level, x, y, z);
+            } else {
+                node.destroy_children();
+            }
+        });
 
         unsafe {
-            //gl::Enable(gl::CULL_FACE);
-            //gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            gl::Enable(gl::CULL_FACE);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
             let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0, 0.1, 1000.0);
-            let model_view: Matrix4<GLfloat> =
-                Matrix4::from_translation(Vector3::new(0.0, 0.0, -1.0)) *
-                Matrix4::from_angle_x(Deg(23.0)) *
-                Matrix4::from_angle_y(Deg(23.0 + t / 10.0)) *
-                Matrix4::from_translation(Vector3::new(-0.5, -0.5, -0.5));
             gl::UniformMatrix4fv(Uniform::Projection as GLint, 1, gl::FALSE, proj.as_ptr());
-            gl::UniformMatrix4fv(Uniform::ModelView as GLint,
+            /*gl::UniformMatrix4fv(Uniform::ModelView as GLint,
                                  1,
                                  gl::FALSE,
-                                 model_view.as_ptr());
+                                 model_view.as_ptr());*/
         }
         t += 1.0;
 
-        geometry.draw();
+        /*geometry.draw();*/
+
+        let model_view: Matrix4<GLfloat> =
+            Matrix4::from_translation(Vector3::new(0.0, 0.0, -1.0)) *
+            Matrix4::from_angle_y(Deg(t - 90.0));
+
+        octree.draw(model_view);
         canvas.present();
 
         for event in events.poll_iter() {
