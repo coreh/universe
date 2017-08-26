@@ -15,9 +15,9 @@ impl Isosurface for Geometry {
         for x in 0..COUNT {
             for y in 0..COUNT {
                 for z in 0..COUNT {
-                    let x = f64::from(x) * STEP;
-                    let y = f64::from(y) * STEP;
-                    let z = f64::from(z) * STEP;
+                    let x = f64::from(x - COUNT / 2) * STEP;
+                    let y = f64::from(y - COUNT / 2) * STEP;
+                    let z = f64::from(z - COUNT / 2) * STEP;
                     if test(field, x, y, z) {
                         if !test(field, x, y, z - STEP) {
                             data.extend_from_slice(&back(field, x, y, z));
