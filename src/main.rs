@@ -11,6 +11,7 @@ mod error;
 mod shader;
 mod geometry;
 mod isosurface;
+mod octree;
 
 use shader::{Shader, Uniform};
 use geometry::Geometry;
