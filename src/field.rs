@@ -1,13 +1,11 @@
 use geometry::{Geometry, Vertex};
 
-pub type ScalarField = Fn(f64, f64, f64) -> f64;
-
 pub trait Isosurface {
-    fn isosurface(field: &ScalarField) -> Self;
+    fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Self;
 }
 
 impl Isosurface for Geometry {
-    fn isosurface(field: &ScalarField) -> Geometry {
+    fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Geometry {
         let mut data = Vec::<Vertex>::with_capacity(50000);
         for x in 0..32 {
             for y in 0..32 {
@@ -17,22 +15,22 @@ impl Isosurface for Geometry {
                     let z = f64::from(z);
                     if test(field, x, y, z) {
                         if !test(field, x, y, z - 1.0) {
-                            data.extend_from_slice(&back(field, x, y, z))
+                            data.extend_from_slice(&back(field, x, y, z));
                         }
                         if !test(field, x, y, z + 1.0) {
-                            data.extend_from_slice(&front(field, x, y, z))
+                            data.extend_from_slice(&front(field, x, y, z));
                         }
                         if !test(field, x - 1.0, y, z) {
-                            data.extend_from_slice(&left(field, x, y, z))
+                            data.extend_from_slice(&left(field, x, y, z));
                         }
                         if !test(field, x + 1.0, y, z) {
-                            data.extend_from_slice(&right(field, x, y, z))
+                            data.extend_from_slice(&right(field, x, y, z));
                         }
                         if !test(field, x, y - 1.0, z) {
-                            data.extend_from_slice(&bottom(field, x, y, z))
+                            data.extend_from_slice(&bottom(field, x, y, z));
                         }
                         if !test(field, x, y + 1.0, z) {
-                            data.extend_from_slice(&top(field, x, y, z))
+                            data.extend_from_slice(&top(field, x, y, z));
                         }
                     }
                 }
@@ -43,12 +41,12 @@ impl Isosurface for Geometry {
 }
 
 #[inline]
-fn test(field: &ScalarField, x: f64, y: f64, z: f64) -> bool {
+fn test<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> bool {
     field(x + 0.5, y + 0.5, z + 0.5) < 0.0
 }
 
 #[inline]
-fn vertex(field: &ScalarField, x: f64, y: f64, z: f64) -> Vertex {
+fn vertex<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> Vertex {
     let x_a = field(x - 1.0, y, z).abs();
     let x_b = field(x + 1.0, y, z).abs();
     let x = if x_a + x_b > 0.0 {
@@ -96,7 +94,7 @@ fn vertex_blocky(field: &Field, x: f64, y: f64, z: f64, a: f32, b: f32, c: f32) 
 }
 */
 #[inline]
-fn front(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
+fn front<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z + 1.0),
      vertex(field, x + 1.0, y + 0.0, z + 1.0),
      vertex(field, x + 1.0, y + 1.0, z + 1.0),
@@ -106,7 +104,7 @@ fn front(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
 }
 
 #[inline]
-fn back(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
+fn back<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z),
      vertex(field, x + 1.0, y + 1.0, z),
      vertex(field, x + 1.0, y + 0.0, z),
@@ -116,7 +114,7 @@ fn back(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
 }
 
 #[inline]
-fn right(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
+fn right<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 1.0, y + 0.0, z + 0.0),
      vertex(field, x + 1.0, y + 1.0, z + 1.0),
      vertex(field, x + 1.0, y + 0.0, z + 1.0),
@@ -126,7 +124,7 @@ fn right(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
 }
 
 #[inline]
-fn left(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
+fn left<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z + 0.0),
      vertex(field, x + 0.0, y + 0.0, z + 1.0),
      vertex(field, x + 0.0, y + 1.0, z + 1.0),
@@ -136,7 +134,7 @@ fn left(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
 }
 
 #[inline]
-fn top(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
+fn top<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 1.0, z + 0.0),
      vertex(field, x + 1.0, y + 1.0, z + 1.0),
      vertex(field, x + 1.0, y + 1.0, z + 0.0),
@@ -146,7 +144,7 @@ fn top(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
 }
 
 #[inline]
-fn bottom(field: &ScalarField, x: f64, y: f64, z: f64) -> [Vertex; 6] {
+fn bottom<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -> [Vertex; 6] {
     [vertex(field, x + 0.0, y + 0.0, z + 0.0),
      vertex(field, x + 1.0, y + 0.0, z + 1.0),
      vertex(field, x + 0.0, y + 0.0, z + 1.0),
