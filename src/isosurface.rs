@@ -8,13 +8,14 @@ const COUNT: i32 = 32;
 const STEP: f64 = 1.0 / 32.0;
 const HALF: f64 = STEP / 2.0;
 const ____: f64 = 0.0;
+const OVER: i32 = 2;
 
 impl Isosurface for Geometry {
     fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Geometry {
         let mut data = Vec::<Vertex>::with_capacity(50000);
-        for x in 0..COUNT {
-            for y in 0..COUNT {
-                for z in 0..COUNT {
+        for x in -OVER..COUNT+OVER {
+            for y in -OVER..COUNT+OVER {
+                for z in -OVER..COUNT+OVER {
                     let x = f64::from(x - COUNT / 2) * STEP;
                     let y = f64::from(y - COUNT / 2) * STEP;
                     let z = f64::from(z - COUNT / 2) * STEP;

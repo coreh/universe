@@ -36,7 +36,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("isosurface", 1024, 1024)
+        .window("octree + isosurface", 1024, 1024)
         //.fullscreen_desktop()
         .build()
         .unwrap();
@@ -55,11 +55,11 @@ fn main() {
     let mut events = sdl_context.event_pump().unwrap();
 
     let shader = Shader::load("base").unwrap();
-    let mut t: f32 = 0.0;
+    let mut t: f32 = 10.0 * ::std::f32::consts::PI;
 
     shader.select();
 
-    let scalar_field = |x: f64, y: f64, z: f64| x.powi(2) + y.powi(2) + z.powi(2) - 0.25;
+    let scalar_field = |x: f64, y: f64, z: f64| ((((z * 3.0).cos() + x+y) * ((y*6.0).cos() + 1.1) * 300.0).cos() * 0.0003 + (((x * 3.0).cos() + y+z) * ((z*6.0).cos() + 1.1) * 250.0).cos() * 0.0005 + (((y * 3.0).cos() + z+x) * ((x*6.0).cos() + 1.1) * 200.0).cos() * 0.0002).abs() + (x*3000.0).cos() * 0.0001 + x.powi(2) + y.powi(2) + z.powi(2) - 0.248;
     let mut octree = Octree::new(&scalar_field);
 
     let mut target_x: f64 = 0.0;
@@ -74,16 +74,16 @@ fn main() {
             Geometry::isosurface(&transform)
         };*/
 
-        target_x = (f64::from(t) / 57.2958).cos() * 0.5;
-        target_z = (f64::from(t) / 57.2958).sin() * 0.5;
+        target_x = (f64::from(t) / 57.2958).cos() * (0.75 - f64::from(t/10.0).cos() * 0.25);
+        target_z = (f64::from(t) / 57.2958).sin() * (0.75 - f64::from(t/10.0).cos() * 0.25);
 
         octree.walk(&|node, info, level, x, y, z| {
             //println!("{{ level: {}, x: {}, y: {}, z: {} }}", level, x, y, z);
             let inc = 0.5 / f64::from(1 << level);
-            if level < 4 &&
-                target_x + 0.1 >= x - inc && target_x - 0.1 <= x + inc &&
-                target_y + 0.1 >= y - inc && target_y - 0.1 <= y + inc &&
-                target_z + 0.1 >= z - inc && target_z - 0.1 <= z + inc {
+            if level < 8 &&
+                target_x + 1.5 * inc >= x - inc && target_x - 1.5 * inc <= x + inc &&
+                target_y + 1.5 * inc >= y - inc && target_y - 1.5 * inc <= y + inc &&
+                target_z + 1.5 * inc >= z - inc && target_z - 1.5 * inc <= z + inc {
                 node.create_children(info, level, x, y, z);
             } else {
                 node.destroy_children();
@@ -92,24 +92,26 @@ fn main() {
 
         unsafe {
             gl::Enable(gl::CULL_FACE);
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            //gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0, 0.1, 1000.0);
+            let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0, 0.0001, 10.0);
             gl::UniformMatrix4fv(Uniform::Projection as GLint, 1, gl::FALSE, proj.as_ptr());
             /*gl::UniformMatrix4fv(Uniform::ModelView as GLint,
                                  1,
                                  gl::FALSE,
                                  model_view.as_ptr());*/
         }
-        t += 1.0;
+        t -= 0.01 * f32::powf(4.0, (0.75 - (t/10.0).cos() * 0.25));
 
         /*geometry.draw();*/
 
         let model_view: Matrix4<GLfloat> =
-            Matrix4::from_translation(Vector3::new(0.0, 0.0, -1.0)) *
+            Matrix4::from_angle_z(Deg(90.0)) *
+            Matrix4::from_angle_y(Deg(30.0 + (t/10.0).cos() * 30.0)) *
+            Matrix4::from_translation(Vector3::new(0.1 - (t/10.0).cos() * 0.1, 0.0, -0.75 + (t/10.0).cos() * 0.25 )) *
             Matrix4::from_angle_y(Deg(t - 90.0));
 
         octree.draw(model_view);
