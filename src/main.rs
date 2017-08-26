@@ -13,29 +13,11 @@ mod geometry;
 mod field;
 
 use shader::{ Shader, Uniform };
-use geometry::{ Geometry, Vertex };
-use field::{ Field, isosurface };
+use geometry::{ Geometry };
+use field::{ Isosurface };
 use cgmath::prelude::*;
-use cgmath::{ Vector3, Matrix4, Deg, Rotation3 };
+use cgmath::{ Vector3, Matrix4, Deg };
 use gl::types::*;
-
-static VERTEX_DATA: [Vertex; 3] = [
-    Vertex {
-        position: [0.0, 0.5, 0.0],
-        normal: [0.0, 0.5, 0.5],
-        uv: [0.0, 0.0],
-    },
-    Vertex {
-        position: [0.5, -0.5, 0.0],
-        normal: [0.5, -0.5, 0.5],
-        uv: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-0.5, -0.5, 0.0],
-        normal: [-0.0, -0.5, 0.5],
-        uv: [0.0, 0.0],
-    },
-];
 
 fn find_sdl_gl_driver() -> Option<u32> {
     for (index, item) in sdl2::render::drivers().enumerate() {
@@ -71,21 +53,22 @@ fn main() {
     let mut events = sdl_context.event_pump().unwrap();
 
     let shader = Shader::load("base").unwrap();
-    //let geometry = Geometry::from(&VERTEX_DATA);
-    let mut t = 0.0;
+    let mut t: f32 = 0.0;
 
     shader.select();
 
     'main: loop {
-        let geometry = isosurface(&move |x: f64, y: f64, z: f64| ((16.0-x).powi(2) + (16.0-y).powi(2) + (16.0-z).powi(2)).sqrt() - 10.0 + (x + f64::from(t/10.0)).cos());
+        let geometry = Geometry::isosurface(&move |x: f64, y: f64, z: f64| f64::from(t/100.0).cos() / 16.0 * (x-16.0).powi(2) + f64::from(t/100.0).sin() / 16.0 * (z-16.0).powi(2) + y - 16.0);
 
         unsafe {
+            //gl::Enable(gl::CULL_FACE);
+            //gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
             let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0, 0.1, 1000.0);
-            let model_view: Matrix4<GLfloat> = Matrix4::from_translation(Vector3::new(0.0, 0.0, -30.0)) * Matrix4::from_angle_y(Deg(23.0 + t))  * Matrix4::from_translation(Vector3::new(-16.0, -16.0, -16.0));
+            let model_view: Matrix4<GLfloat> = Matrix4::from_translation(Vector3::new(0.0, 0.0, -30.0)) * Matrix4::from_angle_x(Deg(23.0))  * Matrix4::from_translation(Vector3::new(-16.0, -16.0, -16.0));
             gl::UniformMatrix4fv(Uniform::Projection as GLint, 1, gl::FALSE, proj.as_ptr());
             gl::UniformMatrix4fv(Uniform::ModelView as GLint, 1, gl::FALSE, model_view.as_ptr());
         }
