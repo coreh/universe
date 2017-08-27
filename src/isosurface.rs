@@ -8,7 +8,7 @@ const COUNT: i32 = 16;
 const STEP: f64 = 1.0 / 16.0;
 const HALF: f64 = STEP / 2.0;
 const ____: f64 = 0.0;
-const OVER: i32 = 2;
+const OVER: i32 = 3;
 
 impl Isosurface for Geometry {
     fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Geometry {
@@ -83,9 +83,9 @@ fn vertex<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a), x: f64, y: f64, z: f64) -
         z
     };
 
-    let n_x = field(x + HALF, y + ____, z + ____) - field(x - HALF, y + ____, z + ____);
-    let n_y = field(x + ____, y + HALF, z + ____) - field(x + ____, y - HALF, z + ____);
-    let n_z = field(x + ____, y + ____, z + HALF) - field(x + ____, y + ____, z - HALF);
+    let n_x = field(x + STEP, y + ____, z + ____) - field(x - STEP, y + ____, z + ____);
+    let n_y = field(x + ____, y + STEP, z + ____) - field(x + ____, y - STEP, z + ____);
+    let n_z = field(x + ____, y + ____, z + STEP) - field(x + ____, y + ____, z - STEP);
 
     let l = (n_x.powi(2) + n_y.powi(2) + n_z.powi(2)).sqrt();
 
