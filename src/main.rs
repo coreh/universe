@@ -36,7 +36,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("octree + isosurface", 1024, 1024)
+        .window("octree + isosurface", 768, 768)
         //.fullscreen_desktop()
         .build()
         .unwrap();
@@ -59,7 +59,7 @@ fn main() {
 
     shader.select();
 
-    let scalar_field = |x: f64, y: f64, z: f64| ((((z * 3.0).cos() + x+y) * ((y*6.0).cos() + 1.1) * 300.0).cos() * 0.0003 + (((x * 3.0).cos() + y+z) * ((z*6.0).cos() + 1.1) * 250.0).cos() * 0.0005 + (((y * 3.0).cos() + z+x) * ((x*6.0).cos() + 1.1) * 200.0).cos() * 0.0002).abs() + (x*3000.0).cos() * 0.0001 + x.powi(2) + y.powi(2) + z.powi(2) - 0.248;
+    let scalar_field = |x: f64, y: f64, z: f64| ((((z * 3.0).cos() + x+y) * ((y*6.0).cos() + 1.1) * 300.0).cos() * 0.0003 + (((x * 3.0).cos() + y+z) * ((z*6.0).cos() + 1.1) * 250.0).cos() * 0.001 + (((y * 3.0).cos() + z+x) * ((x*6.0).cos() + 1.1) * 200.0).cos() * 0.0004).abs() + (x*300.0).cos() * 0.0001 + x.powi(2) + y.powi(2) + z.powi(2) - 0.248;
     let mut octree = Octree::new(&scalar_field);
 
     let mut target_x: f64 = 0.0;
@@ -110,7 +110,7 @@ fn main() {
 
         let model_view: Matrix4<GLfloat> =
             Matrix4::from_angle_z(Deg(90.0)) *
-            Matrix4::from_angle_y(Deg(30.0 + (t/10.0).cos() * 30.0)) *
+            Matrix4::from_angle_y(Deg(40.0 + (t/10.0).cos() * 30.0)) *
             Matrix4::from_translation(Vector3::new(0.1 - (t/10.0).cos() * 0.1, 0.0, -0.75 + (t/10.0).cos() * 0.25 )) *
             Matrix4::from_angle_y(Deg(t - 90.0));
 
