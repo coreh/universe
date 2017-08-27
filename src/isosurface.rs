@@ -4,14 +4,20 @@ pub trait Isosurface {
     fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Self;
 }
 
-const COUNT: i32 = 32;
-const STEP: f64 = 1.0 / 32.0;
+const COUNT: i32 = 16;
+const STEP: f64 = 1.0 / 16.0;
 const HALF: f64 = STEP / 2.0;
 const ____: f64 = 0.0;
 const OVER: i32 = 2;
 
 impl Isosurface for Geometry {
     fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Geometry {
+        Geometry::from(Vec::<Vertex>::isosurface(field).as_ref())
+    }
+}
+
+impl Isosurface for Vec<Vertex> {
+    fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Vec<Vertex> {
         let mut data = Vec::<Vertex>::with_capacity(50000);
         for x in -OVER..COUNT+OVER {
             for y in -OVER..COUNT+OVER {
@@ -42,7 +48,7 @@ impl Isosurface for Geometry {
                 }
             }
         }
-        Geometry::from(data.as_ref())
+        data
     }
 }
 

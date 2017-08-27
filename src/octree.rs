@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::mem;
 use geometry::Geometry;
 use isosurface::Isosurface;
 use cgmath::prelude::*;
@@ -7,30 +8,44 @@ use cgmath::{Vector3, Matrix4, Deg};
 use shader::{Uniform};
 use gl::types::*;
 use gl;
+use worker::{Worker, Task, Result};
 
-pub struct Octree<'a> {
+pub struct Octree {
     pub(crate) root: OctreeNode,
-    pub(crate) info: OctreeInfo<'a>,
+    pub(crate) info: OctreeInfo,
 }
 
-pub struct OctreeInfo<'a> {
-    scalar_field: &'a (Fn(f64, f64, f64) -> f64 + 'a)
+pub struct OctreeInfo {
+    worker: Worker,
 }
 
-impl<'a> Octree<'a> {
+impl Octree {
     #[inline]
-    pub fn new(scalar_field: &'a (Fn(f64, f64, f64) -> f64 + 'a)) -> Octree<'a> {
-        let info = OctreeInfo { scalar_field };
-        Octree { root: OctreeNode::new(&info, 0, 0.0, 0.0, 0.0), info }
+    pub fn new<F>(scalar_field: F) -> Octree where F: Fn(f64, f64, f64) -> f64 + Send + 'static {
+        let worker = Worker::spawn(scalar_field);
+        let info = OctreeInfo { worker };
+        Octree { root: OctreeNode::new(&info, &mut vec!(), 0, 0.0, 0.0, 0.0), info }
     }
 
-    pub fn walk<'b>(&mut self, callback: &(Fn(&mut OctreeNode, &OctreeInfo, i32, f64, f64, f64) + 'b)) {
-        self.root.walk(&self.info, callback, 0, 0.0, 0.0, 0.0);
+    pub fn walk<'b>(&mut self, callback: &(Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64) + 'b)) {
+        self.root.walk(&self.info, callback, &mut vec!(), 0, 0.0, 0.0, 0.0);
     }
 
     pub fn draw(&mut self, parent_model_view: Matrix4<GLfloat>) {
-        self.root.walk(&self.info, &|node, info, level, x, y, z| {
-            if node.children.is_some() {
+        self.root.walk(&self.info, &|node, info, path, level, x, y, z| {
+            let mut should_draw = false;
+            match &node.children {
+                &Some(ref children) => {
+                    for child in children.as_ref() {
+                        if (child.geometry.is_none()) {
+                            should_draw = true;
+                        }
+                    }
+                }
+                &None => { should_draw = true }
+            }
+
+            if !should_draw {
                 return;
             }
 
@@ -49,7 +64,14 @@ impl<'a> Octree<'a> {
             if let Some(ref geometry) = node.geometry {
                 geometry.draw();
             }
-        }, 0, 0.0, 0.0, 0.0);
+        }, &mut vec!(), 0, 0.0, 0.0, 0.0);
+    }
+
+    pub fn update(&mut self) {
+        for result in self.info.worker.try_iter() {
+            let geometry = Geometry::from(result.data.as_ref());
+            self.root.update(&result.path, 0, geometry);
+        }
     }
 }
 
@@ -60,44 +82,67 @@ pub struct OctreeNode {
 
 impl OctreeNode {
     #[inline]
-    pub fn new(info: &OctreeInfo, level: i32, x_origin: f64, y_origin: f64, z_origin: f64) -> OctreeNode {
-        let transformed = |x: f64, y: f64, z: f64| (info.scalar_field)(x / f64::from(1 << level) + x_origin, y / f64::from(1 << level) + y_origin, z / f64::from(1 << level) + z_origin);
-        OctreeNode { geometry: Some(Geometry::isosurface(&transformed)), children: None }
+    pub fn new(info: &OctreeInfo, path: &Vec<i8>, level: i32, x: f64, y: f64, z: f64) -> OctreeNode {
+        println!("-> {:?} - {}", path, level);
+        info.worker.send(Task {
+            path: path.clone(),
+            level,
+            x,
+            y,
+            z,
+        });
+        OctreeNode { geometry: None, children: None }
     }
 
-    fn walk<'a>(&mut self, info: &OctreeInfo, callback: &(Fn(&mut OctreeNode, &OctreeInfo, i32, f64, f64, f64) + 'a), level: i32, x: f64, y: f64, z: f64) {
-        callback(self, info, level, x, y, z);
+    fn walk<'a>(&mut self, info: &OctreeInfo, callback: &(Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64) + 'a), path: &mut Vec<i8>, level: i32, x: f64, y: f64, z: f64) {
+        callback(self, info, path, level, x, y, z);
         let next_level = level + 1;
         let inc = 0.5 / f64::from(1 << next_level);
         match &mut self.children {
             &mut Some(ref mut children) => {
-                children[0].walk(info, callback, next_level, x + inc, y + inc, z + inc);
-                children[1].walk(info, callback, next_level, x + inc, y + inc, z - inc);
-                children[2].walk(info, callback, next_level, x + inc, y - inc, z + inc);
-                children[3].walk(info, callback, next_level, x + inc, y - inc, z - inc);
-                children[4].walk(info, callback, next_level, x - inc, y + inc, z + inc);
-                children[5].walk(info, callback, next_level, x - inc, y + inc, z - inc);
-                children[6].walk(info, callback, next_level, x - inc, y - inc, z + inc);
-                children[7].walk(info, callback, next_level, x - inc, y - inc, z - inc);
+                path.push(0);
+                children[0].walk(info, callback, path, next_level, x + inc, y + inc, z + inc);
+                path.pop();
+                path.push(1);
+                children[1].walk(info, callback, path, next_level, x + inc, y + inc, z - inc);
+                path.pop();
+                path.push(2);
+                children[2].walk(info, callback, path, next_level, x + inc, y - inc, z + inc);
+                path.pop();
+                path.push(3);
+                children[3].walk(info, callback, path, next_level, x + inc, y - inc, z - inc);
+                path.pop();
+                path.push(4);
+                children[4].walk(info, callback, path, next_level, x - inc, y + inc, z + inc);
+                path.pop();
+                path.push(5);
+                children[5].walk(info, callback, path, next_level, x - inc, y + inc, z - inc);
+                path.pop();
+                path.push(6);
+                children[6].walk(info, callback, path, next_level, x - inc, y - inc, z + inc);
+                path.pop();
+                path.push(7);
+                children[7].walk(info, callback, path, next_level, x - inc, y - inc, z - inc);
+                path.pop();
             }
             &mut None => {}
         }
     }
 
     #[inline]
-    pub fn create_children(&mut self, info: &OctreeInfo, level: i32, x: f64, y: f64, z: f64) {
+    pub fn create_children(&mut self, info: &OctreeInfo, path: &mut Vec<i8>, level: i32, x: f64, y: f64, z: f64) {
         if self.children.is_none() {
             let next_level = level + 1;
             let inc = 0.5 / f64::from(1 << next_level);
             self.children = Some(Box::from([
-                OctreeNode::new(info, next_level, x + inc, y + inc, z + inc),
-                OctreeNode::new(info, next_level, x + inc, y + inc, z - inc),
-                OctreeNode::new(info, next_level, x + inc, y - inc, z + inc),
-                OctreeNode::new(info, next_level, x + inc, y - inc, z - inc),
-                OctreeNode::new(info, next_level, x - inc, y + inc, z + inc),
-                OctreeNode::new(info, next_level, x - inc, y + inc, z - inc),
-                OctreeNode::new(info, next_level, x - inc, y - inc, z + inc),
-                OctreeNode::new(info, next_level, x - inc, y - inc, z - inc),
+                { path.push(0); let node = OctreeNode::new(info, path, next_level, x + inc, y + inc, z + inc); path.pop(); node },
+                { path.push(1); let node = OctreeNode::new(info, path, next_level, x + inc, y + inc, z - inc); path.pop(); node },
+                { path.push(2); let node = OctreeNode::new(info, path, next_level, x + inc, y - inc, z + inc); path.pop(); node },
+                { path.push(3); let node = OctreeNode::new(info, path, next_level, x + inc, y - inc, z - inc); path.pop(); node },
+                { path.push(4); let node = OctreeNode::new(info, path, next_level, x - inc, y + inc, z + inc); path.pop(); node },
+                { path.push(5); let node = OctreeNode::new(info, path, next_level, x - inc, y + inc, z - inc); path.pop(); node },
+                { path.push(6); let node = OctreeNode::new(info, path, next_level, x - inc, y - inc, z + inc); path.pop(); node },
+                { path.push(7); let node = OctreeNode::new(info, path, next_level, x - inc, y - inc, z - inc); path.pop(); node },
             ]));
         }
     }
@@ -106,22 +151,15 @@ impl OctreeNode {
     pub fn destroy_children(&mut self) {
         self.children = None;
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use octree::{Octree};
-
-    #[test]
-    fn blah() {
-        let scalar_field = &|x: f64, y: f64, z: f64| x.powi(2) + y.powi(2) + z.powi(2) - 1.0;
-        let mut octree = Octree::new(&scalar_field);
-
-        octree.walk(&|octree, info, level, x, y, z| {
-            println!("{{ level: {}, x: {}, y: {}, z: {} }}", level, x, y, z);
-            if level < 3 {
-                octree.create_children(info, level, x, y, z);
+    pub fn update(&mut self, path: &Vec<i8>, level: i32, geometry: Geometry) {
+        if level as usize == path.len() {
+            self.geometry = Some(geometry);
+        } else {
+            match self.children {
+                Some(ref mut children) => { children[path[level as usize] as usize].update(path, level + 1, geometry) }
+                None => {}
             }
-        });
+        }
     }
 }

@@ -12,6 +12,7 @@ mod shader;
 mod geometry;
 mod isosurface;
 mod octree;
+mod worker;
 
 use shader::{Shader, Uniform};
 use geometry::Geometry;
@@ -59,8 +60,8 @@ fn main() {
 
     shader.select();
 
-    let scalar_field = |x: f64, y: f64, z: f64| ((((z * 3.0).cos() + x+y) * ((y*6.0).cos() + 1.1) * 300.0).cos() * 0.0003 + (((x * 3.0).cos() + y+z) * ((z*6.0).cos() + 1.1) * 250.0).cos() * 0.001 + (((y * 3.0).cos() + z+x) * ((x*6.0).cos() + 1.1) * 200.0).cos() * 0.0004).abs() + (x*300.0).cos() * 0.0001 + x.powi(2) + y.powi(2) + z.powi(2) - 0.248;
-    let mut octree = Octree::new(&scalar_field);
+    let scalar_field = |x: f64, y: f64, z: f64| ((((z * 3.0).cos() + x+y) * ((y*6.0).cos() + 1.1) * 300.0).cos() * 0.0003 + (((x * 3.0).cos() + y+z) * ((z*6.0).cos() + 1.1) * 250.0).cos() * 0.001 + (((y * 3.0).cos() + z+x) * ((x*6.0).cos() + 1.1) * 200.0).cos() * 0.0004).abs() + (x*300.0).cos() * 0.0001 + x.powi(2) + y.powi(2) + z.powi(2)  - 0.248;
+    let mut octree = Octree::new(scalar_field);
 
     let mut target_x: f64 = 0.0;
     let mut target_y: f64 = 0.0;
@@ -77,14 +78,14 @@ fn main() {
         target_x = (f64::from(t) / 57.2958).cos() * (0.75 - f64::from(t/10.0).cos() * 0.25);
         target_z = (f64::from(t) / 57.2958).sin() * (0.75 - f64::from(t/10.0).cos() * 0.25);
 
-        octree.walk(&|node, info, level, x, y, z| {
+        octree.walk(&|node, info, path, level, x, y, z| {
             //println!("{{ level: {}, x: {}, y: {}, z: {} }}", level, x, y, z);
             let inc = 0.5 / f64::from(1 << level);
             if level < 8 &&
-                target_x + 1.5 * inc >= x - inc && target_x - 1.5 * inc <= x + inc &&
-                target_y + 1.5 * inc >= y - inc && target_y - 1.5 * inc <= y + inc &&
-                target_z + 1.5 * inc >= z - inc && target_z - 1.5 * inc <= z + inc {
-                node.create_children(info, level, x, y, z);
+                target_x + 2.0 * inc >= x - inc && target_x - 2.0 * inc <= x + inc &&
+                target_y + 2.0 * inc >= y - inc && target_y - 2.0 * inc <= y + inc &&
+                target_z + 2.0 * inc >= z - inc && target_z - 2.0 * inc <= z + inc {
+                node.create_children(info, path, level, x, y, z);
             } else {
                 node.destroy_children();
             }
@@ -104,18 +105,19 @@ fn main() {
                                  gl::FALSE,
                                  model_view.as_ptr());*/
         }
-        t -= 0.01 * f32::powf(4.0, (0.75 - (t/10.0).cos() * 0.25));
+        t -= 0.005 * (2.0 - (t/10.0).cos()).powi(2);
 
         /*geometry.draw();*/
 
         let model_view: Matrix4<GLfloat> =
             Matrix4::from_angle_z(Deg(90.0)) *
             Matrix4::from_angle_y(Deg(40.0 + (t/10.0).cos() * 30.0)) *
-            Matrix4::from_translation(Vector3::new(0.1 - (t/10.0).cos() * 0.1, 0.0, -0.75 + (t/10.0).cos() * 0.25 )) *
+            Matrix4::from_translation(Vector3::new(0.1 - (t/10.0).cos() * 0.1, 0.0, -0.748 + (t/10.0).cos() * 0.25 )) *
             Matrix4::from_angle_y(Deg(t - 90.0));
 
         octree.draw(model_view);
         canvas.present();
+        octree.update();
 
         for event in events.poll_iter() {
             match event {
