@@ -15,7 +15,14 @@ struct Parent {
     results: Sender<Result>,
 }
 
+#[derive(PartialEq)]
+pub enum TaskAction {
+    Generate,
+    Cancel,
+}
+
 pub struct Task {
+    pub action: TaskAction,
     pub x: f64,
     pub y: f64,
     pub z: f64,
@@ -39,7 +46,6 @@ impl Worker {
         };
 
         thread::spawn(move || {
-            parent.tasks.recv();
             Worker::run(parent, scalar_field);
         });
 
@@ -50,19 +56,54 @@ impl Worker {
     }
 
     fn run<F>(parent: Parent, scalar_field: F) where F: Fn(f64, f64, f64) -> f64 + Send + 'static {
+        let mut tasks = Vec::<Task>::with_capacity(100);
         loop {
-            let task = parent.tasks.recv().unwrap();
-            println!("{:?} - {}", task.path, task.level);
-            let transformed = |x: f64, y: f64, z: f64| scalar_field(
-                x / f64::from(1 << task.level) + task.x,
-                y / f64::from(1 << task.level) + task.y,
-                z / f64::from(1 << task.level) + task.z,
-            );
-            let result = Result {
-                data: Vec::<Vertex>::isosurface(&transformed),
-                path: task.path.clone(),
-            };
-            parent.results.send(result).unwrap();
+
+            if tasks.is_empty() {
+                tasks.push(parent.tasks.recv().unwrap());
+            }
+
+            for task in parent.tasks.try_iter() {
+                tasks.push(task);
+            }
+
+            tasks.sort_by(|a, b| b.level.cmp(&a.level));
+
+            let task = tasks.pop().unwrap();
+
+            match task.action {
+                TaskAction::Generate => {
+                    let transformed = |x: f64, y: f64, z: f64| scalar_field(
+                        x / f64::from(1 << task.level) + task.x,
+                        y / f64::from(1 << task.level) + task.y,
+                        z / f64::from(1 << task.level) + task.z,
+                    );
+
+                    let result = Result {
+                        data: Vec::<Vertex>::isosurface(&transformed),
+                        path: task.path.clone(),
+                    };
+
+                    parent.results.send(result).unwrap();
+                }
+
+                TaskAction::Cancel => {
+                    let index = tasks.iter().position(|other_task| {
+                        task.x == other_task.x &&
+                        task.y == other_task.y &&
+                        task.z == other_task.z &&
+                        other_task.action == TaskAction::Cancel
+                    });
+
+                    match index {
+                        Some(index) => {
+                            tasks.remove(index);
+                        }
+                        None => {}
+                    }
+                }
+            }
+
         }
     }
 

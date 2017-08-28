@@ -75,19 +75,19 @@ fn main() {
             Geometry::isosurface(&transform)
         };*/
 
-        target_x = (f64::from(t) / 57.2958).cos() * (0.75 - f64::from(t/10.0).cos() * 0.25);
-        target_z = (f64::from(t) / 57.2958).sin() * (0.75 - f64::from(t/10.0).cos() * 0.25);
+        target_x = (f64::from(t) / 57.2958).cos() * (0.625 - f64::from(t/10.0).cos() * 0.125);
+        target_z = (f64::from(t) / 57.2958).sin() * (0.625 - f64::from(t/10.0).cos() * 0.125);
 
         octree.walk(&|node, info, path, level, x, y, z| {
             //println!("{{ level: {}, x: {}, y: {}, z: {} }}", level, x, y, z);
             let inc = 0.5 / f64::from(1 << level);
-            if level < 8 &&
-                target_x + 2.0 * inc >= x - inc && target_x - 2.0 * inc <= x + inc &&
-                target_y + 2.0 * inc >= y - inc && target_y - 2.0 * inc <= y + inc &&
-                target_z + 2.0 * inc >= z - inc && target_z - 2.0 * inc <= z + inc {
+            if level < 12 &&
+                target_x + 4.0 * inc >= x - inc && target_x - 4.0 * inc <= x + inc &&
+                target_y + 4.0 * inc >= y - inc && target_y - 4.0 * inc <= y + inc &&
+                target_z + 4.0 * inc >= z - inc && target_z - 4.0 * inc <= z + inc {
                 node.create_children(info, path, level, x, y, z);
             } else {
-                node.destroy_children();
+                node.destroy_children(info, path, level, x, y, z);
             }
         });
 
@@ -98,14 +98,14 @@ fn main() {
             gl::DepthFunc(gl::LESS);
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0, 0.0001, 10.0);
+            let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0/1.0, 0.0001, 10.0);
             gl::UniformMatrix4fv(Uniform::Projection as GLint, 1, gl::FALSE, proj.as_ptr());
             /*gl::UniformMatrix4fv(Uniform::ModelView as GLint,
                                  1,
                                  gl::FALSE,
                                  model_view.as_ptr());*/
         }
-        t -= 0.005 * (2.0 - (t/10.0).cos()).powi(2);
+        t -= 0.002 * (2.0 - (t/10.0).cos()).powi(2);
 
         /*geometry.draw();*/
 

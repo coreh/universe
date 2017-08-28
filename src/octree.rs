@@ -8,7 +8,7 @@ use cgmath::{Vector3, Matrix4, Deg};
 use shader::{Uniform};
 use gl::types::*;
 use gl;
-use worker::{Worker, Task, Result};
+use worker::{Worker, Task, TaskAction, Result};
 
 pub struct Octree {
     pub(crate) root: OctreeNode,
@@ -83,8 +83,8 @@ pub struct OctreeNode {
 impl OctreeNode {
     #[inline]
     pub fn new(info: &OctreeInfo, path: &Vec<i8>, level: i32, x: f64, y: f64, z: f64) -> OctreeNode {
-        println!("-> {:?} - {}", path, level);
         info.worker.send(Task {
+            action: TaskAction::Generate,
             path: path.clone(),
             level,
             x,
@@ -95,7 +95,6 @@ impl OctreeNode {
     }
 
     fn walk<'a>(&mut self, info: &OctreeInfo, callback: &(Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64) + 'a), path: &mut Vec<i8>, level: i32, x: f64, y: f64, z: f64) {
-        callback(self, info, path, level, x, y, z);
         let next_level = level + 1;
         let inc = 0.5 / f64::from(1 << next_level);
         match &mut self.children {
@@ -127,6 +126,8 @@ impl OctreeNode {
             }
             &mut None => {}
         }
+
+        callback(self, info, path, level, x, y, z);
     }
 
     #[inline]
@@ -148,7 +149,25 @@ impl OctreeNode {
     }
 
     #[inline]
-    pub fn destroy_children(&mut self) {
+    pub fn destroy_children(&mut self, info: &OctreeInfo, path: &mut Vec<i8>, level: i32, x: f64, y: f64, z: f64) {
+        match &mut self.children {
+            &mut Some(ref children) => {
+                for child in children.as_ref() {
+                    if child.geometry.is_none() {
+                        info.worker.send(Task {
+                            action: TaskAction::Cancel,
+                            path: path.clone(),
+                            level,
+                            x,
+                            y,
+                            z,
+                        });
+                    }
+                }
+            }
+            &mut None => {}
+        }
+
         self.children = None;
     }
 
