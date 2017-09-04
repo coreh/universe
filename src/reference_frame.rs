@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use cgmath::prelude::*;
 use cgmath::Matrix4;
 
-struct ReferenceFrame {
+pub struct ReferenceFrame {
     label: String,
     parent: Option<Arc<ReferenceFrame>>,
     transform: Mutex<Matrix4<f64>>,
@@ -21,11 +21,11 @@ lazy_static! {
 }
 
 impl ReferenceFrame {
-    fn privileged() -> Arc<ReferenceFrame> {
+    pub fn privileged() -> Arc<ReferenceFrame> {
         PRIVILEGED_REFERENCE_FRAME.clone()
     }
 
-    fn new<S: Into<String>>(label: S, parent: Arc<ReferenceFrame>) -> Arc<ReferenceFrame> {
+    pub fn new<S: Into<String>>(label: S, parent: Arc<ReferenceFrame>) -> Arc<ReferenceFrame> {
         Arc::from(ReferenceFrame {
                       label: label.into(),
                       parent: Some(parent),
@@ -33,11 +33,11 @@ impl ReferenceFrame {
                   })
     }
 
-    fn get(&self) -> Matrix4<f64> {
+    pub fn get(&self) -> Matrix4<f64> {
         (*self.transform.lock().unwrap()).clone()
     }
 
-    fn set(&self, transform: Matrix4<f64>) {
+    pub fn set(&self, transform: Matrix4<f64>) {
         (*self.transform.lock().unwrap()) = transform;
     }
 
@@ -48,7 +48,7 @@ impl ReferenceFrame {
         }
     }
 
-    fn transform(from: &Arc<ReferenceFrame>, to: &Arc<ReferenceFrame>) -> Option<Matrix4<f64>> {
+    pub fn transform(from: &Arc<ReferenceFrame>, to: &Arc<ReferenceFrame>) -> Option<Matrix4<f64>> {
         let mut a_transform: Matrix4<f64> = One::one();
         let mut a = from.clone();
         loop {
