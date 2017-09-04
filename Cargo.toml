@@ -9,6 +9,7 @@ quick-error = "1.2.0"
 sdl2 = "0.30.0"
 gl = "0.6.0"
 cgmath = "0.15.0"
+lazy_static = "0.2.8"
 
 [features]
 default = ["opengl"]
