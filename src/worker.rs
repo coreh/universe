@@ -2,8 +2,8 @@
 
 use std::sync::mpsc::{channel, Sender, Receiver, TryIter};
 use std::thread;
-use geometry::Vertex;
-use isosurface::Isosurface;
+use crate::geometry::Vertex;
+use crate::isosurface::Isosurface;
 
 pub struct Worker {
     tasks: Sender<Task>,

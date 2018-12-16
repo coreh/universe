@@ -2,7 +2,7 @@ use std;
 use gl;
 use gl::types::*;
 
-use shader::Attribute;
+use crate::shader::Attribute;
 
 pub mod traits {
     pub trait Vertex {

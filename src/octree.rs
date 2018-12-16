@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
-use geometry::Geometry;
+use crate::geometry::Geometry;
 use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4};
-use shader::{Uniform};
+use crate::shader::{Uniform};
 use gl::types::*;
 use gl;
-use worker::{Worker, Task, TaskAction};
+use crate::worker::{Worker, Task, TaskAction};
 
 pub struct Octree {
     pub(crate) root: OctreeNode,

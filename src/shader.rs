@@ -6,7 +6,7 @@ use std::fmt::Write as FmtWrite;
 use gl;
 use gl::types::*;
 
-use error::Error;
+use crate::error::Error;
 
 pub enum Attribute {
     Position = 0,

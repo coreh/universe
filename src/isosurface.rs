@@ -1,4 +1,4 @@
-use geometry::{Geometry, Vertex};
+use crate::geometry::{Geometry, Vertex};
 
 pub trait Isosurface {
     fn isosurface<'a>(field: &(Fn(f64, f64, f64) -> f64 + 'a)) -> Self;

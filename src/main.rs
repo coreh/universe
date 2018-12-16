@@ -18,12 +18,12 @@ mod octree;
 mod worker;
 mod reference_frame;
 
-use shader::{Shader, Uniform};
+use crate::shader::{Shader, Uniform};
 use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4, Deg};
 use gl::types::*;
-use octree::{Octree};
-use reference_frame::ReferenceFrame;
+use crate::octree::{Octree};
+use crate::reference_frame::ReferenceFrame;
 
 fn find_sdl_gl_driver() -> Option<u32> {
     for (index, item) in sdl2::render::drivers().enumerate() {

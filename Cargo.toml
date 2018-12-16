@@ -3,6 +3,7 @@ name = "universe"
 version = "0.1.0"
 authors = ["Marco Buono <thecoreh@gmail.com>"]
 build = "build.rs"
+edition = "2018"
 
 [dependencies]
 quick-error = "1.2.0"
