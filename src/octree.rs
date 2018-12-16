@@ -19,7 +19,7 @@ pub struct OctreeInfo {
 
 impl Octree {
     #[inline]
-    pub fn new<F>(scalar_field: F) -> Octree where F: Fn(f64, f64, f64) -> f64 + Send + 'static {
+    pub fn new(scalar_field: impl Fn(f64, f64, f64) -> f64 + Send + 'static) -> Octree {
         let worker = Worker::spawn(scalar_field);
         let info = OctreeInfo { worker };
         Octree { root: OctreeNode::new(&info, &mut vec!(), 0, 0.0, 0.0, 0.0), info }

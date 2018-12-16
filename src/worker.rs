@@ -36,7 +36,7 @@ pub struct Result {
 }
 
 impl Worker {
-    pub fn spawn<F>(scalar_field: F) -> Worker where F: Fn(f64, f64, f64) -> f64 + Send + 'static {
+    pub fn spawn(scalar_field: impl Fn(f64, f64, f64) -> f64 + Send + 'static) -> Worker {
         let (sender_task, receiver_task) = channel::<Task>();
         let (sender_result, receiver_result) = channel::<Result>();
 
@@ -55,7 +55,7 @@ impl Worker {
         }
     }
 
-    fn run<F>(parent: Parent, scalar_field: F) where F: Fn(f64, f64, f64) -> f64 + Send + 'static {
+    fn run(parent: Parent, scalar_field: impl Fn(f64, f64, f64) -> f64 + Send + 'static) {
         let mut tasks = Vec::<Task>::with_capacity(100);
         loop {
 
