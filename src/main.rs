@@ -61,11 +61,11 @@ fn main() {
     let shader = Shader::load("base").unwrap();
     let mut t: f32 = 10.0;
 
-    let mut r_universe = ReferenceFrame::privileged();
-    let mut r_solar_system = ReferenceFrame::new("Solar System", &r_universe);
-    let mut r_orbit = ReferenceFrame::new("Orbit", &r_solar_system);
-    let mut r_planet = ReferenceFrame::new("Planet", &r_orbit);
-    let mut r_ship = ReferenceFrame::new("Ship", &r_orbit);
+    let r_universe = ReferenceFrame::privileged();
+    let r_solar_system = ReferenceFrame::new("Solar System", &r_universe);
+    let r_orbit = ReferenceFrame::new("Orbit", &r_solar_system);
+    let r_planet = ReferenceFrame::new("Planet", &r_orbit);
+    let r_ship = ReferenceFrame::new("Ship", &r_orbit);
 
     shader.select();
 
@@ -73,7 +73,7 @@ fn main() {
     let mut octree = Octree::new(scalar_field);
 
     let mut target_x: f64;
-    let mut target_y: f64 = 0.0;
+    let target_y: f64 = 0.0;
     let mut target_z: f64;
 
     'main: loop {
