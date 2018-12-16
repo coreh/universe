@@ -25,6 +25,7 @@ use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4, Deg};
 use gl::types::*;
 use octree::{Octree};
+use reference_frame::ReferenceFrame;
 
 fn find_sdl_gl_driver() -> Option<u32> {
     for (index, item) in sdl2::render::drivers().enumerate() {
@@ -60,7 +61,13 @@ fn main() {
     let mut events = sdl_context.event_pump().unwrap();
 
     let shader = Shader::load("base").unwrap();
-    let mut t: f32 = 10.0 * ::std::f32::consts::PI;
+    let mut t: f32 = 10.0;
+
+    let mut r_universe = ReferenceFrame::privileged();
+    let mut r_solar_system = ReferenceFrame::new("Solar System", &r_universe);
+    let mut r_orbit = ReferenceFrame::new("Orbit", &r_solar_system);
+    let mut r_planet = ReferenceFrame::new("Planet", &r_orbit);
+    let mut r_ship = ReferenceFrame::new("Ship", &r_orbit);
 
     shader.select();
 
@@ -102,24 +109,32 @@ fn main() {
             gl::DepthFunc(gl::LESS);
             gl::ClearColor(0.0, 0.0, 0.0, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0/1.0, 0.0001, 10.0);
+            let proj: Matrix4<GLfloat> = cgmath::perspective(Deg(90.0), 1.0/1.0, 0.01, 1e20);
             gl::UniformMatrix4fv(Uniform::Projection as GLint, 1, gl::FALSE, proj.as_ptr());
             /*gl::UniformMatrix4fv(Uniform::ModelView as GLint,
                                  1,
                                  gl::FALSE,
                                  model_view.as_ptr());*/
         }
-        t -= 0.002 * (2.0 - (t/10.0).cos()).powi(2);
+        //t -= 0.002 * (2.0 - (t/10.0).cos()).powi(2);
+
+        t *= 1.02;
+
+        r_planet.set(Matrix4::from_scale(60.0 * t as f64));
+        r_ship.set(Matrix4::from_translation(Vector3::new(0.0, 0.0, 60.0 * t as f64)));
 
         /*geometry.draw();*/
 
-        let model_view: Matrix4<GLfloat> =
-            Matrix4::from_angle_z(Deg(90.0)) *
-            Matrix4::from_angle_y(Deg(40.0 + (t/10.0).cos() * 30.0)) *
-            Matrix4::from_translation(Vector3::new(0.1 - (t/10.0).cos() * 0.1, 0.0, -0.748 + (t/10.0).cos() * 0.25 )) *
-            Matrix4::from_angle_y(Deg(t - 90.0));
+        println!("{:?}", ReferenceFrame::transform(&r_planet, &r_ship).unwrap());
 
+        let model_view: Matrix4<GLfloat> = ReferenceFrame::transform(&r_planet, &r_ship).unwrap().cast();
         octree.draw(model_view);
+
+        r_planet.set(Matrix4::from_scale(0.01));
+        r_ship.set(Matrix4::from_translation(Vector3::new(0.0, 0.005, 0.02)));
+        let model_view: Matrix4<GLfloat> = ReferenceFrame::transform(&r_planet, &r_ship).unwrap().cast();
+        octree.draw(model_view);
+
         canvas.present();
         octree.update();
 
