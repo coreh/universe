@@ -8,5 +8,13 @@ out vec3 v_normal;
 
 void main() {
     gl_Position = projection * model_view * vec4(position, 1.0);
+
+    // Logarithmic depth buffer
+    //
+    // See:
+    // https://outerra.blogspot.com/2009/08/logarithmic-z-buffer.html
+    // https://outerra.blogspot.com/2013/07/logarithmic-depth-buffer-optimizations.html
+    float Fcoef = 2.0 / log2(1e20 + 1.0);
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * Fcoef - 1.0) * gl_Position.w;
     v_normal = normal;
 }
