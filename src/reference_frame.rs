@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
 use std::sync::{Arc, Mutex};
-use cgmath::prelude::*;
 use cgmath::Matrix4;
+use cgmath::prelude::*;
+use lazy_static::*;
 
 pub struct ReferenceFrame {
     label: String,

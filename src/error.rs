@@ -1,4 +1,5 @@
 use std;
+use quick_error::*;
 use sdl2;
 
 quick_error!{

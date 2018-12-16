@@ -1,13 +1,3 @@
-extern crate cgmath;
-extern crate sdl2;
-extern crate gl;
-
-#[macro_use]
-extern crate lazy_static;
-
-#[macro_use]
-extern crate quick_error;
-
 use sdl2::event::Event;
 
 mod error;
