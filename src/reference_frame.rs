@@ -1,11 +1,10 @@
-#![allow(dead_code)]
-
 use std::sync::{Arc, Mutex};
 use cgmath::Matrix4;
 use cgmath::prelude::*;
 use lazy_static::*;
 
 pub struct ReferenceFrame {
+    #[allow(dead_code)]
     label: String,
     parent: Option<Arc<ReferenceFrame>>,
     transform: Mutex<Matrix4<f64>>,
