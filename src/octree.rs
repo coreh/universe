@@ -25,7 +25,7 @@ impl Octree {
         Octree { root: OctreeNode::new(&info, &mut vec!(), 0, 0.0, 0.0, 0.0), info }
     }
 
-    pub fn walk<'b>(&mut self, callback: &(Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64) + 'b)) {
+    pub fn walk(&mut self, callback: &(Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64))) {
         self.root.walk(&self.info, callback, &mut vec!(), 0, 0.0, 0.0, 0.0);
     }
 
@@ -92,7 +92,7 @@ impl OctreeNode {
         OctreeNode { geometry: None, children: None }
     }
 
-    fn walk<'a>(&mut self, info: &OctreeInfo, callback: &(Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64) + 'a), path: &mut Vec<i8>, level: i32, x: f64, y: f64, z: f64) {
+    fn walk(&mut self, info: &OctreeInfo, callback: &Fn(&mut OctreeNode, &OctreeInfo, &mut Vec<i8>, i32, f64, f64, f64), path: &mut Vec<i8>, level: i32, x: f64, y: f64, z: f64) {
         let next_level = level + 1;
         let inc = 0.5 / f64::from(1 << next_level);
         match &mut self.children {
