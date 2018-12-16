@@ -19,8 +19,6 @@ mod worker;
 mod reference_frame;
 
 use shader::{Shader, Uniform};
-use geometry::Geometry;
-use isosurface::Isosurface;
 use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4, Deg};
 use gl::types::*;
@@ -74,9 +72,9 @@ fn main() {
     let scalar_field = |x: f64, y: f64, z: f64| ((((z * 3.0).cos() + x+y) * ((y*6.0).cos() + 1.1) * 300.0).cos() * 0.0003 + (((x * 3.0).cos() + y+z) * ((z*6.0).cos() + 1.1) * 250.0).cos() * 0.001 + (((y * 3.0).cos() + z+x) * ((x*6.0).cos() + 1.1) * 200.0).cos() * 0.0004).abs() + (x*300.0).cos() * 0.0001 + x.powi(2) + y.powi(2) + z.powi(2)  - 0.248;
     let mut octree = Octree::new(scalar_field);
 
-    let mut target_x: f64 = 0.0;
+    let mut target_x: f64;
     let mut target_y: f64 = 0.0;
-    let mut target_z: f64 = 0.0;
+    let mut target_z: f64;
 
     'main: loop {
         /*let geometry = {

@@ -1,14 +1,12 @@
 #![allow(dead_code)]
 
-use std::mem;
 use geometry::Geometry;
-use isosurface::Isosurface;
 use cgmath::prelude::*;
-use cgmath::{Vector3, Matrix4, Deg};
+use cgmath::{Vector3, Matrix4};
 use shader::{Uniform};
 use gl::types::*;
 use gl;
-use worker::{Worker, Task, TaskAction, Result};
+use worker::{Worker, Task, TaskAction};
 
 pub struct Octree {
     pub(crate) root: OctreeNode,
@@ -32,12 +30,12 @@ impl Octree {
     }
 
     pub fn draw(&mut self, parent_model_view: Matrix4<GLfloat>) {
-        self.root.walk(&self.info, &|node, info, path, level, x, y, z| {
+        self.root.walk(&self.info, &|node, _info, _path, level, x, y, z| {
             let mut should_draw = false;
             match &node.children {
                 &Some(ref children) => {
                     for child in children.as_ref() {
-                        if (child.geometry.is_none()) {
+                        if child.geometry.is_none() {
                             should_draw = true;
                         }
                     }
